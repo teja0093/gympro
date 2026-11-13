@@ -21,6 +21,8 @@ Client → API Gateway (JWT check) → Services (each with its own MySQL databas
 
 Java 21, Spring Boot 4, Spring Cloud (Gateway, Eureka, OpenFeign), Spring Security, JWT, Spring Data JPA, MySQL, Maven
 
+Parent `pom.xml` groups all services so they open together as one project in Eclipse.
+
 ## Key Features
 
 - JWT authentication with role-based access (ADMIN, TRAINER, MEMBER)
