@@ -13,7 +13,7 @@ Client → API Gateway (JWT check) → Services (each with its own MySQL databas
 | discovery-server | 8761 | Eureka service registry |
 | api-gateway | 8080 | Single entry point, routing, JWT validation |
 | auth-service | 8081 | Register, login, JWT token, roles (ADMIN, TRAINER, MEMBER) |
-| member-service | 8082 | Membership plans, member profiles, subscriptions, daily expiry job |
+| member-service | 8082 | Membership plans, member profiles, subscriptions, daily expiry job, admin dashboard |
 | attendance-service | 8083 | Check-in / check-out, uses OpenFeign to verify an active membership |
 | workout-service | 8085 | Trainers create workout and diet plans, members view their own |
 
@@ -29,6 +29,8 @@ Java 21, Spring Boot 4, Spring Cloud (Gateway, Eureka, OpenFeign), Spring Securi
 - Scheduled job that expires old subscriptions
 - Check-in is rejected if the membership is expired
 - Trainers create workout and diet plans, and members see only their own
+- Global exception handling: every error returns the same clean JSON format
+- Admin dashboard: total members, active/expired subscriptions, revenue, and memberships expiring within 7 days
 
 ## How to Run
 
@@ -47,9 +49,12 @@ Java 21, Spring Boot 4, Spring Cloud (Gateway, Eureka, OpenFeign), Spring Securi
 | POST | /plans | ADMIN |
 | GET | /plans | Any logged-in user |
 | POST | /members/profile | Logged-in user |
+| GET | /members/me | Logged-in user |
 | POST | /members/subscribe/{planId} | MEMBER |
+| GET | /members/dashboard | ADMIN |
 | POST | /attendance/check-in | MEMBER (active subscription needed) |
 | POST | /attendance/check-out | MEMBER |
+| GET | /attendance/me | MEMBER |
 | POST | /workouts/plans | TRAINER, ADMIN |
 | POST | /workouts/diets | TRAINER, ADMIN |
 | GET | /workouts/my-plans | MEMBER |
@@ -57,4 +62,4 @@ Java 21, Spring Boot 4, Spring Cloud (Gateway, Eureka, OpenFeign), Spring Securi
 
 ## Author
 
-Teja - https://github.com/teja0093
+Teja -
