@@ -1,5 +1,7 @@
 package com.gympro.member_service.service;
 
+import com.gympro.member_service.dto.DashboardResponse;
+import java.math.BigDecimal;
 import com.gympro.member_service.entity.*;
 import com.gympro.member_service.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -74,5 +76,28 @@ public class MemberService {
                 .findByStatusAndEndDateBefore(SubscriptionStatus.ACTIVE, LocalDate.now());
         expired.forEach(s -> s.setStatus(SubscriptionStatus.EXPIRED));
         subscriptionRepository.saveAll(expired);
+    }
+    public DashboardResponse dashboard() {
+        LocalDate today = LocalDate.now();
+
+        List<DashboardResponse.ExpiringSoon> expiring = subscriptionRepository
+                .findByStatusAndEndDateBetween(SubscriptionStatus.ACTIVE, today, today.plusDays(7))
+                .stream()
+                .map(s -> new DashboardResponse.ExpiringSoon(
+                        s.getMemberId(),
+                        memberRepository.findById(s.getMemberId()).map(Member::getName).orElse("Unknown"),
+                        s.getPlan().getName(),
+                        s.getEndDate().toString()))
+                .toList();
+
+        BigDecimal monthRevenue = subscriptionRepository.revenueSince(today.withDayOfMonth(1));
+
+        return new DashboardResponse(
+                memberRepository.count(),
+                subscriptionRepository.countByStatus(SubscriptionStatus.ACTIVE),
+                subscriptionRepository.countByStatus(SubscriptionStatus.EXPIRED),
+                subscriptionRepository.totalRevenue(),
+                monthRevenue,
+                expiring);
     }
 }

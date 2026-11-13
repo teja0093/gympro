@@ -1,5 +1,6 @@
 package com.gympro.member_service.controller;
 
+import com.gympro.member_service.dto.DashboardResponse;
 import com.gympro.member_service.entity.Member;
 import com.gympro.member_service.entity.Subscription;
 import com.gympro.member_service.service.MemberService;
@@ -42,5 +43,11 @@ public class MemberController {
     @GetMapping("/{id}/subscription")
     public Subscription activeSubscription(@PathVariable Long id) {
         return memberService.getActiveSubscription(id);
+    }
+    
+    @GetMapping("/dashboard")
+    public DashboardResponse dashboard(@RequestHeader("X-User-Role") String role) {
+        RoleGuard.requireRole(role, "ADMIN");
+        return memberService.dashboard();
     }
 }
