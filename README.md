@@ -19,9 +19,9 @@ Client → API Gateway (JWT check) → Services (each with its own MySQL databas
 
 ## Tech Stack
 
-Java 21, Spring Boot 4, Spring Cloud (Gateway, Eureka, OpenFeign), Spring Security, JWT, Spring Data JPA, MySQL, Maven
+Java 21, Spring Boot 4, Spring Cloud (Gateway, Eureka, OpenFeign), Spring Security, JWT, Spring Data JPA, MySQL, Swagger (springdoc OpenAPI), Maven
 
-Parent `pom.xml` groups all services so they open together as one project in Eclipse.
+A parent `pom.xml` groups all services so they open together as one project in Eclipse.
 
 ## Key Features
 
@@ -33,6 +33,7 @@ Parent `pom.xml` groups all services so they open together as one project in Ecl
 - Trainers create workout and diet plans, and members see only their own
 - Global exception handling: every error returns the same clean JSON format
 - Admin dashboard: total members, active/expired subscriptions, revenue, and memberships expiring within 7 days
+- Swagger UI on every service for API documentation and testing
 
 ## How to Run
 
@@ -42,6 +43,17 @@ Parent `pom.xml` groups all services so they open together as one project in Ecl
 4. Open http://localhost:8761 to see the registered services
 5. Send all API requests to http://localhost:8080
 
+## API Documentation (Swagger UI)
+
+| Service | Swagger URL |
+|---|---|
+| auth-service | http://localhost:8081/swagger-ui.html |
+| member-service | http://localhost:8082/swagger-ui.html |
+| attendance-service | http://localhost:8083/swagger-ui.html |
+| workout-service | http://localhost:8085/swagger-ui.html |
+
+Services behind the gateway read the headers `X-User-Email` and `X-User-Role`. In Swagger, fill these in by hand (for example `X-User-Role: ADMIN`). Through the gateway on port 8080 they are added automatically from the JWT.
+
 ## Main API Endpoints
 
 | Method | Endpoint | Who can use it |
@@ -50,18 +62,26 @@ Parent `pom.xml` groups all services so they open together as one project in Ecl
 | POST | /auth/login | Everyone |
 | POST | /plans | ADMIN |
 | GET | /plans | Any logged-in user |
+| GET | /plans/{id} | Any logged-in user |
+| PUT | /plans/{id} | ADMIN |
+| DELETE | /plans/{id} | ADMIN |
 | POST | /members/profile | Logged-in user |
 | GET | /members/me | Logged-in user |
+| GET | /members | ADMIN, TRAINER |
 | POST | /members/subscribe/{planId} | MEMBER |
+| GET | /members/{id}/subscription | Logged-in user |
 | GET | /members/dashboard | ADMIN |
 | POST | /attendance/check-in | MEMBER (active subscription needed) |
 | POST | /attendance/check-out | MEMBER |
 | GET | /attendance/me | MEMBER |
+| GET | /attendance/member/{id} | ADMIN, TRAINER |
 | POST | /workouts/plans | TRAINER, ADMIN |
 | POST | /workouts/diets | TRAINER, ADMIN |
+| GET | /workouts/member?email= | TRAINER, ADMIN |
+| DELETE | /workouts/plans/{id} | TRAINER, ADMIN |
 | GET | /workouts/my-plans | MEMBER |
 | GET | /workouts/my-diets | MEMBER |
 
 ## Author
 
-Teja -
+Teja - https://github.com/teja0093
