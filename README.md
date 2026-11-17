@@ -1,15 +1,15 @@
 # GymPro
 
-Gym management system built with **Spring Boot microservices**.
+Gym management system built with **Spring Boot microservices** and a **React** frontend.
 
 ## Architecture
 
 Client → API Gateway (JWT check) → Services (each with its own MySQL database)
 
 ```
-                    Client (Postman / Swagger / React later)
+                  React Frontend (Vite, 5173)  /  Postman  /  Swagger
                                   |
-                       API Gateway (8080)  validates JWT
+                       API Gateway (8080)  validates JWT, CORS
                                   |
    ---------------------------------------------------------------------
    |            |               |               |              |
@@ -26,18 +26,21 @@ auth_db       member_db      attendance_db   workout_db     payment_db
 | Service | Port | What it does |
 |---|---|---|
 | discovery-server | 8761 | Eureka service registry |
-| api-gateway | 8080 | Single entry point, routing, JWT validation |
+| api-gateway | 8080 | Single entry point, routing, JWT validation, CORS |
 | auth-service | 8081 | Register, login, JWT token, roles (ADMIN, TRAINER, MEMBER) |
 | member-service | 8082 | Membership plans, member profiles, subscriptions, daily expiry job, admin dashboard |
 | attendance-service | 8083 | Check-in / check-out, uses OpenFeign to verify an active membership |
 | payment-service | 8084 | Creates payment orders, verifies payments (Razorpay or mock mode), activates the subscription |
 | workout-service | 8085 | Trainers create workout and diet plans, members view their own |
+| gympro-frontend | 5173 | React web app (login, plans, payment) |
 
 ## Tech Stack
 
-Java 21, Spring Boot 4, Spring Cloud (Gateway, Eureka, OpenFeign), Spring Security, JWT, Spring Data JPA, MySQL, Razorpay, Swagger (springdoc OpenAPI), Maven
+**Backend:** Java 21, Spring Boot 4, Spring Cloud (Gateway, Eureka, OpenFeign), Spring Security, JWT, Spring Data JPA, MySQL, Razorpay, Swagger (springdoc OpenAPI), Maven
 
-A parent `pom.xml` groups all services so they open together as one project in Eclipse.
+**Frontend:** React, Vite, React Router, Axios
+
+A parent `pom.xml` groups all backend services so they open together as one project in Eclipse.
 
 ## Key Features
 
@@ -53,6 +56,8 @@ A parent `pom.xml` groups all services so they open together as one project in E
 - Global exception handling: every error returns the same clean JSON format
 - Admin dashboard: total members, active/expired subscriptions, revenue, and memberships expiring within 7 days
 - Swagger UI on every service for API documentation and testing
+- React frontend: register/login, view membership plans, buy a plan through the payment flow
+- CORS configured in the gateway for the frontend
 
 ## Payment Flow
 
@@ -65,11 +70,23 @@ A parent `pom.xml` groups all services so they open together as one project in E
 
 ## How to Run
 
+### Backend
+
 1. Create the MySQL databases: `auth_db`, `member_db`, `attendance_db`, `workout_db`, `payment_db`
 2. Set the environment variable `DB_PASSWORD` to your MySQL password (for auth, member, attendance, workout and payment services)
 3. Start the services in this order: discovery-server, auth-service, member-service, attendance-service, workout-service, payment-service, api-gateway
 4. Open http://localhost:8761 to see the registered services
 5. Send all API requests to http://localhost:8080
+
+### Frontend
+
+```
+cd gympro-frontend
+npm install
+npm run dev
+```
+
+Open http://localhost:5173. Register a user, log in, and buy a plan. (A member profile is needed before buying: create it with `POST /members/profile`.)
 
 ## API Documentation (Swagger UI)
 
@@ -114,6 +131,13 @@ Services behind the gateway read the headers `X-User-Email` and `X-User-Role`. I
 | DELETE | /workouts/plans/{id} | TRAINER, ADMIN |
 | GET | /workouts/my-plans | MEMBER |
 | GET | /workouts/my-diets | MEMBER |
+
+## Roadmap
+
+- React pages: profile, my subscription, check-in/out, workouts, trainer and admin dashboards
+- Docker and docker-compose for all services
+- Unit tests (JUnit, Mockito)
+- Notification service (email on signup and expiring memberships)
 
 ## Author
 
