@@ -11,6 +11,7 @@ import com.razorpay.RazorpayException;
 import com.razorpay.Utils;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -22,6 +23,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
@@ -44,7 +46,7 @@ public class PaymentService {
     public OrderResponse createOrder(String email, Long planId) {
         PlanDto plan;
         try {
-            memberClient.getMe(email);               // member must have a profile
+            memberClient.getMe(email);
             plan = memberClient.getPlan(planId);
         } catch (FeignException.NotFound e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
@@ -56,7 +58,6 @@ public class PaymentService {
 
         long paise = plan.getPrice().multiply(BigDecimal.valueOf(100)).longValue();
 
-        // ---- Mock mode: no Razorpay needed ----
         if (mock) {
             String orderId = "order_mock_" + UUID.randomUUID().toString().substring(0, 8);
             paymentRepository.save(Payment.builder()
@@ -70,7 +71,6 @@ public class PaymentService {
             return new OrderResponse(orderId, paise, "INR", "mock_key");
         }
 
-        // ---- Real Razorpay ----
         try {
             RazorpayClient client = new RazorpayClient(keyId, keySecret);
             JSONObject options = new JSONObject();
@@ -135,6 +135,7 @@ public class PaymentService {
         try {
             memberClient.subscribe(email, internalKey, payment.getPlanId());
         } catch (FeignException e) {
+            log.error("Subscribe failed: status={} body={}", e.status(), e.contentUTF8());
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
                     "Payment received but the subscription could not be activated. Contact support.");
         }
