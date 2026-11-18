@@ -20,6 +20,11 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final MembershipPlanRepository planRepository;
     private final SubscriptionRepository subscriptionRepository;
+    
+    public Subscription getMyActiveSubscription(String email) {
+        Member member = getByEmail(email);
+        return getActiveSubscription(member.getId());
+    }
 
     public Member createProfile(String email, Member req) {
         if (memberRepository.existsByUserEmail(email)) {

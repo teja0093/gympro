@@ -23,7 +23,7 @@ export default function Login() {
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("email", res.data.email);
         localStorage.setItem("role", res.data.role);
-        navigate("/plans");
+        navigate("/profile");
       }
     } catch (e) {
       const data = e.response?.data;

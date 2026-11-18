@@ -22,6 +22,11 @@ public class MemberController {
     
     @Value("${internal.key}")
     private String internalKey;
+    
+    @GetMapping("/me/subscription")
+    public Subscription mySubscription(@RequestHeader("X-User-Email") String email) {
+        return memberService.getMyActiveSubscription(email);
+    }
 
     @PostMapping("/profile")
     public Member createProfile(@RequestHeader("X-User-Email") String email,
