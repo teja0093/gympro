@@ -23,7 +23,12 @@ export default function Login() {
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("email", res.data.email);
         localStorage.setItem("role", res.data.role);
-        navigate("/profile");
+
+        // Send each role to its own home page
+        const role = res.data.role;
+        if (role === "ADMIN") navigate("/admin");
+        else if (role === "TRAINER") navigate("/trainer");
+        else navigate("/profile");
       }
     } catch (e) {
       const data = e.response?.data;
