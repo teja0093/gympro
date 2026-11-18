@@ -21,6 +21,8 @@ auth_db       member_db      attendance_db   workout_db     payment_db
         Discovery Server (Eureka, 8761): all services register here
 ```
 
+The gateway validates the JWT and forwards the user's email and role to each service as the headers `X-User-Email` and `X-User-Role`. The services never handle tokens themselves.
+
 ## Services
 
 | Service | Port | What it does |
@@ -86,7 +88,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173. Register a user, log in, and buy a plan. (A member profile is needed before buying: create it with `POST /members/profile`.)
+Open http://localhost:5173. Register a user, log in, and buy a plan.
 
 ## API Documentation (Swagger UI)
 
@@ -131,6 +133,12 @@ Services behind the gateway read the headers `X-User-Email` and `X-User-Role`. I
 | DELETE | /workouts/plans/{id} | TRAINER, ADMIN |
 | GET | /workouts/my-plans | MEMBER |
 | GET | /workouts/my-diets | MEMBER |
+
+## Known Limitations
+
+- A member profile is required before buying a plan. It is created with `POST /members/profile`; a profile page in the frontend is planned.
+- If activation fails after a successful payment, the payment stays `SUCCESS` and needs manual follow-up. A retry or refund step is planned.
+- Services run locally; Docker support is planned.
 
 ## Roadmap
 
