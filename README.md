@@ -1,6 +1,6 @@
 # GymPro
 
-Gym management system built with **Spring Boot microservices** and a **React** frontend.
+Gym management system built with **Spring Boot microservices** and a **React** frontend. The whole backend runs with one Docker command.
 
 ## Architecture
 
@@ -34,13 +34,15 @@ The gateway validates the JWT and forwards the user's email and role to each ser
 | attendance-service | 8083 | Check-in / check-out, uses OpenFeign to verify an active membership |
 | payment-service | 8084 | Creates payment orders, verifies payments (Razorpay or mock mode), activates the subscription |
 | workout-service | 8085 | Trainers create workout and diet plans, members view their own |
-| gympro-frontend | 5173 | React web app (login, plans, payment) |
+| gympro-frontend | 5173 | React web app with member, trainer and admin pages |
 
 ## Tech Stack
 
 **Backend:** Java 21, Spring Boot 4, Spring Cloud (Gateway, Eureka, OpenFeign), Spring Security, JWT, Spring Data JPA, MySQL, Razorpay, Swagger (springdoc OpenAPI), Maven
 
 **Frontend:** React, Vite, React Router, Axios
+
+**DevOps:** Docker, Docker Compose, Git
 
 A parent `pom.xml` groups all backend services so they open together as one project in Eclipse.
 
@@ -58,8 +60,16 @@ A parent `pom.xml` groups all backend services so they open together as one proj
 - Global exception handling: every error returns the same clean JSON format
 - Admin dashboard: total members, active/expired subscriptions, revenue, and memberships expiring within 7 days
 - Swagger UI on every service for API documentation and testing
-- React frontend: register/login, view membership plans, buy a plan through the payment flow
+- Dockerized: the whole backend runs with one `docker compose` command
 - CORS configured in the gateway for the frontend
+
+## Frontend Pages
+
+| Role | Pages |
+|---|---|
+| Member | Profile, Plans (buy), My Subscription, Attendance (check-in/out and history), Workouts and Diet |
+| Trainer | Create workout plans and diet plans for members |
+| Admin | Dashboard (members, revenue, expiring memberships), Manage Plans, Trainer tools |
 
 ## Payment Flow
 
@@ -72,13 +82,27 @@ A parent `pom.xml` groups all backend services so they open together as one proj
 
 ## How to Run
 
-### Backend
+### Option 1: Docker (recommended)
+
+1. Install Docker Desktop and start it.
+2. Copy `.env.example` to `.env` and set `DB_PASSWORD` to any password you like.
+3. Run:
+
+```
+docker compose up --build
+```
+
+4. Open http://localhost:8761 to see the registered services (give it 2 to 3 minutes).
+5. Create the first admin: `POST http://localhost:8080/auth/register` with `"role": "ADMIN"`.
+
+Next time, `docker compose up -d` starts everything without rebuilding, and `docker compose down` stops it.
+
+### Option 2: Run from Eclipse or IntelliJ
 
 1. Create the MySQL databases: `auth_db`, `member_db`, `attendance_db`, `workout_db`, `payment_db`
 2. Set the environment variable `DB_PASSWORD` to your MySQL password (for auth, member, attendance, workout and payment services)
 3. Start the services in this order: discovery-server, auth-service, member-service, attendance-service, workout-service, payment-service, api-gateway
 4. Open http://localhost:8761 to see the registered services
-5. Send all API requests to http://localhost:8080
 
 ### Frontend
 
@@ -88,7 +112,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173. Register a user, log in, and buy a plan.
+Open http://localhost:5173. Log in as the admin, create a plan in Manage Plans, then register a member, create a profile and buy the plan.
 
 ## API Documentation (Swagger UI)
 
@@ -100,7 +124,7 @@ Open http://localhost:5173. Register a user, log in, and buy a plan.
 | payment-service | http://localhost:8084/swagger-ui.html |
 | workout-service | http://localhost:8085/swagger-ui.html |
 
-Services behind the gateway read the headers `X-User-Email` and `X-User-Role`. In Swagger, fill these in by hand (for example `X-User-Role: ADMIN`). Through the gateway on port 8080 they are added automatically from the JWT.
+Services behind the gateway read the headers `X-User-Email` and `X-User-Role`. In Swagger, fill these in by hand (for example `X-User-Role: ADMIN`). Through the gateway on port 8080 they are added automatically from the JWT. (With Docker, the service ports are only reachable through the gateway on 8080.)
 
 ## Main API Endpoints
 
@@ -136,16 +160,15 @@ Services behind the gateway read the headers `X-User-Email` and `X-User-Role`. I
 
 ## Known Limitations
 
-- A member profile is required before buying a plan. It is created with `POST /members/profile`; a profile page in the frontend is planned.
 - If activation fails after a successful payment, the payment stays `SUCCESS` and needs manual follow-up. A retry or refund step is planned.
-- Services run locally; Docker support is planned.
+- The frontend runs with `npm run dev`; it is not yet part of docker-compose.
 
 ## Roadmap
 
-- React pages: profile, my subscription, check-in/out, workouts, trainer and admin dashboards
-- Docker and docker-compose for all services
 - Unit tests (JUnit, Mockito)
 - Notification service (email on signup and expiring memberships)
+- Frontend in Docker and cloud deployment
+- Screenshots and a demo video
 
 ## Author
 
