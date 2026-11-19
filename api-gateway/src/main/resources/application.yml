@@ -39,8 +39,10 @@ spring:
               predicates:
                 - Path=/payments/**
 eureka:
+  instance:
+    prefer-ip-address: true
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
 jwt:
-  secret: gympro-super-secret-key-change-this-1234567890
+  secret: ${JWT_SECRET:gympro-super-secret-key-change-this-1234567890}

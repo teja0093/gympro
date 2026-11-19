@@ -8,3 +8,4 @@ target/
 .mvn/wrapper/maven-wrapper.jar
 *.log
 node_modules/
+.env

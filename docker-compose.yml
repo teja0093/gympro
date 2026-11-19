@@ -1,0 +1,80 @@
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  discovery-server:
+    build: { context: ., args: { SERVICE: discovery-server } }
+    ports: ["8761:8761"]
+
+  auth-service:
+    build: { context: ., args: { SERVICE: auth-service } }
+    environment:
+      DB_HOST: mysql
+      DB_PASSWORD: ${DB_PASSWORD}
+      EUREKA_URL: http://discovery-server:8761/eureka
+    depends_on:
+      mysql: { condition: service_healthy }
+      discovery-server: { condition: service_started }
+
+  member-service:
+    build: { context: ., args: { SERVICE: member-service } }
+    environment:
+      DB_HOST: mysql
+      DB_PASSWORD: ${DB_PASSWORD}
+      EUREKA_URL: http://discovery-server:8761/eureka
+    depends_on:
+      mysql: { condition: service_healthy }
+      discovery-server: { condition: service_started }
+
+  attendance-service:
+    build: { context: ., args: { SERVICE: attendance-service } }
+    environment:
+      DB_HOST: mysql
+      DB_PASSWORD: ${DB_PASSWORD}
+      EUREKA_URL: http://discovery-server:8761/eureka
+    depends_on:
+      mysql: { condition: service_healthy }
+      discovery-server: { condition: service_started }
+
+  workout-service:
+    build: { context: ., args: { SERVICE: workout-service } }
+    environment:
+      DB_HOST: mysql
+      DB_PASSWORD: ${DB_PASSWORD}
+      EUREKA_URL: http://discovery-server:8761/eureka
+    depends_on:
+      mysql: { condition: service_healthy }
+      discovery-server: { condition: service_started }
+
+  payment-service:
+    build: { context: ., args: { SERVICE: payment-service } }
+    environment:
+      DB_HOST: mysql
+      DB_PASSWORD: ${DB_PASSWORD}
+      EUREKA_URL: http://discovery-server:8761/eureka
+    depends_on:
+      mysql: { condition: service_healthy }
+      discovery-server: { condition: service_started }
+
+  api-gateway:
+    build: { context: ., args: { SERVICE: api-gateway } }
+    ports: ["8080:8080"]
+    environment:
+      EUREKA_URL: http://discovery-server:8761/eureka
+    depends_on:
+      - discovery-server
+
+volumes:
+  mysql-data:

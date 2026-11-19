@@ -4,16 +4,18 @@ spring:
   application:
     name: auth-service
   datasource:
-    url: jdbc:mysql://localhost:3306/auth_db
+    url: jdbc:mysql://${DB_HOST:localhost}:3306/auth_db?allowPublicKeyRetrieval=true&useSSL=false
     username: root
     password: ${DB_PASSWORD:yourpassword}
   jpa:
     hibernate:
       ddl-auto: update
 eureka:
+  instance:
+    prefer-ip-address: true
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
 jwt:
-  secret: gympro-super-secret-key-change-this-1234567890
+  secret: ${JWT_SECRET:gympro-super-secret-key-change-this-1234567890}
   expiration-ms: 86400000
