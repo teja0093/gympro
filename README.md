@@ -42,6 +42,8 @@ The gateway validates the JWT and forwards the user's email and role to each ser
 
 **Frontend:** React, Vite, React Router, Axios
 
+**Testing:** JUnit 5, Mockito
+
 **DevOps:** Docker, Docker Compose, Git
 
 A parent `pom.xml` groups all backend services so they open together as one project in Eclipse.
@@ -60,8 +62,17 @@ A parent `pom.xml` groups all backend services so they open together as one proj
 - Global exception handling: every error returns the same clean JSON format
 - Admin dashboard: total members, active/expired subscriptions, revenue, and memberships expiring within 7 days
 - Swagger UI on every service for API documentation and testing
+- Unit tests with JUnit 5 and Mockito for the core business rules
 - Dockerized: the whole backend runs with one `docker compose` command
 - CORS configured in the gateway for the frontend
+
+## Design Decisions
+
+- **Database per service:** services never share tables, so each one can change and scale on its own.
+- **Gateway handles security:** the JWT is checked once at the gateway, and the services trust the `X-User-*` headers.
+- **Sync calls with OpenFeign:** attendance-service asks member-service whether a membership is active before allowing check-in. If member-service is down, the user gets a clear 503 message.
+- **Pay before subscribe:** the subscribe endpoint is locked with an internal key, so only payment-service can activate a subscription after a verified payment.
+- **Pluggable payments:** Razorpay or mock mode is chosen with one setting (`RAZORPAY_MOCK`).
 
 ## Frontend Pages
 
@@ -112,7 +123,37 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173. Log in as the admin, create a plan in Manage Plans, then register a member, create a profile and buy the plan.
+Open http://localhost:5173.
+
+### First-time setup
+
+The database starts empty, so create the first users with `POST http://localhost:8080/auth/register`:
+
+```json
+{ "name": "Admin", "email": "admin@gmail.com", "password": "123456", "role": "ADMIN" }
+```
+```json
+{ "name": "Coach", "email": "trainer@gmail.com", "password": "123456", "role": "TRAINER" }
+```
+
+Then log in as the admin and create a plan in **Manage Plans**. Register a member on the website, create a profile, and buy the plan.
+
+## Running the Tests
+
+```
+cd auth-service
+mvnw test -Dtest=AuthServiceTest
+
+cd ../attendance-service
+mvnw test -Dtest=AttendanceServiceTest
+```
+
+The tests use Mockito to fake the database and the other services, so no MySQL or Eureka is needed.
+
+| Test class | What it checks |
+|---|---|
+| AuthServiceTest | Passwords are stored encoded, duplicate emails are rejected, wrong passwords get no token |
+| AttendanceServiceTest | Check-in is blocked without an active membership, double check-in is rejected, check-out rules |
 
 ## API Documentation (Swagger UI)
 
@@ -162,10 +203,11 @@ Services behind the gateway read the headers `X-User-Email` and `X-User-Role`. I
 
 - If activation fails after a successful payment, the payment stays `SUCCESS` and needs manual follow-up. A retry or refund step is planned.
 - The frontend runs with `npm run dev`; it is not yet part of docker-compose.
+- Unit tests cover auth-service and attendance-service; the other services are planned.
 
 ## Roadmap
 
-- Unit tests (JUnit, Mockito)
+- More unit tests (member-service, payment-service, workout-service)
 - Notification service (email on signup and expiring memberships)
 - Frontend in Docker and cloud deployment
 - Screenshots and a demo video
