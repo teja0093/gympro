@@ -66,6 +66,34 @@ A parent `pom.xml` groups all backend services so they open together as one proj
 - Dockerized: the whole backend runs with one `docker compose` command
 - CORS configured in the gateway for the frontend
 
+## Screenshots
+
+**Eureka dashboard (all services registered)**
+
+![Eureka](screenshots/eureka.png)
+
+**Login and plans**
+
+![Login](screenshots/login.png)
+![Plans](screenshots/plans.png)
+
+**Member pages**
+
+![Subscription](screenshots/subscription.png)
+![Attendance](screenshots/attendance.png)
+
+**Admin dashboard**
+
+![Dashboard](screenshots/dashboard.png)
+
+**API documentation (Swagger)**
+
+![Swagger](screenshots/swagger.png)
+
+**Unit tests passing**
+
+![Tests](screenshots/tests.png)
+
 ## Design Decisions
 
 - **Database per service:** services never share tables, so each one can change and scale on its own.
@@ -210,7 +238,7 @@ Services behind the gateway read the headers `X-User-Email` and `X-User-Role`. I
 - More unit tests (member-service, payment-service, workout-service)
 - Notification service (email on signup and expiring memberships)
 - Frontend in Docker and cloud deployment
-- Screenshots and a demo video
+- Demo video
 
 ## Author
 
