@@ -84,7 +84,7 @@ A parent `pom.xml` groups all backend services so they open together as one proj
 
 **Admin dashboard**
 
-![Dashboard](screenshots/dashboard.png)
+![Dashboard](screenshots/Dashboard.png)
 
 **API documentation (Swagger)**
 
@@ -92,7 +92,13 @@ A parent `pom.xml` groups all backend services so they open together as one proj
 
 **Unit tests passing**
 
-![Tests](screenshots/tests.png)
+AuthServiceTest:
+
+![Auth tests](screenshots/test1.png)
+
+AttendanceServiceTest:
+
+![Attendance tests](screenshots/test2.png)
 
 ## Design Decisions
 
