@@ -76,5 +76,11 @@ services:
     depends_on:
       - discovery-server
 
+  frontend:
+    build: ./gympro-frontend
+    ports: ["5173:80"]
+    depends_on:
+      - api-gateway
+
 volumes:
   mysql-data:
