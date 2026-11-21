@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface DietPlanRepository extends JpaRepository<DietPlan, Long> {
     List<DietPlan> findByMemberEmail(String memberEmail);
+    List<DietPlan> findAllByMemberEmailIgnoreCaseAndTitleIgnoreCase(String memberEmail, String title);
 }

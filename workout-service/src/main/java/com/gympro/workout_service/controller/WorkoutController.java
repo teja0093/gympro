@@ -26,7 +26,7 @@ public class WorkoutController {
         }
     }
 
-    // ---- Trainer APIs ----
+    // ---- Trainer / admin: workout plans ----
 
     @PostMapping("/plans")
     public WorkoutPlan createWorkout(@RequestHeader("X-User-Email") String email,
@@ -36,12 +36,20 @@ public class WorkoutController {
         return workoutService.createWorkout(email, req);
     }
 
-    @PostMapping("/diets")
-    public DietPlan createDiet(@RequestHeader("X-User-Email") String email,
-                               @RequestHeader("X-User-Role") String role,
-                               @Valid @RequestBody DietPlanRequest req) {
+    @PutMapping("/plans/{id}")
+    public WorkoutPlan updateWorkout(@RequestHeader("X-User-Role") String role,
+                                     @PathVariable Long id,
+                                     @Valid @RequestBody WorkoutPlanRequest req) {
         requireTrainer(role);
-        return workoutService.createDiet(email, req);
+        return workoutService.updateWorkout(id, req);
+    }
+
+    @DeleteMapping("/plans/{id}")
+    public String deleteWorkout(@RequestHeader("X-User-Role") String role,
+                                @PathVariable Long id) {
+        requireTrainer(role);
+        workoutService.deleteWorkout(id);
+        return "Workout plan deleted";
     }
 
     @GetMapping("/member")
@@ -51,12 +59,37 @@ public class WorkoutController {
         return workoutService.workoutsOf(email);
     }
 
-    @DeleteMapping("/plans/{id}")
-    public String deleteWorkout(@RequestHeader("X-User-Role") String role,
-                                @PathVariable Long id) {
+    // ---- Trainer / admin: diet plans ----
+
+    @PostMapping("/diets")
+    public DietPlan createDiet(@RequestHeader("X-User-Email") String email,
+                               @RequestHeader("X-User-Role") String role,
+                               @Valid @RequestBody DietPlanRequest req) {
         requireTrainer(role);
-        workoutService.deleteWorkout(id);
-        return "Workout plan deleted";
+        return workoutService.createDiet(email, req);
+    }
+
+    @PutMapping("/diets/{id}")
+    public DietPlan updateDiet(@RequestHeader("X-User-Role") String role,
+                               @PathVariable Long id,
+                               @Valid @RequestBody DietPlanRequest req) {
+        requireTrainer(role);
+        return workoutService.updateDiet(id, req);
+    }
+
+    @DeleteMapping("/diets/{id}")
+    public String deleteDiet(@RequestHeader("X-User-Role") String role,
+                             @PathVariable Long id) {
+        requireTrainer(role);
+        workoutService.deleteDiet(id);
+        return "Diet plan deleted";
+    }
+
+    @GetMapping("/diets/member")
+    public List<DietPlan> dietsOfMember(@RequestHeader("X-User-Role") String role,
+                                        @RequestParam String email) {
+        requireTrainer(role);
+        return workoutService.dietsOf(email);
     }
 
     // ---- Member APIs ----

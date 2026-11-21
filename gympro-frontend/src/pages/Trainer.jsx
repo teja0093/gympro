@@ -1,12 +1,16 @@
 import { useState } from "react";
 import api from "../api.js";
 
+const emptyWorkout = { memberEmail: "", title: "", goal: "" };
+const emptyDiet = { memberEmail: "", title: "", meals: "", caloriesPerDay: "" };
+
 export default function Trainer() {
-  const [w, setW] = useState({ memberEmail: "", title: "", goal: "" });
+  const [w, setW] = useState(emptyWorkout);
   const [exercises, setExercises] = useState([{ name: "", sets: "", reps: "" }]);
-  const [d, setD] = useState({ memberEmail: "", title: "", meals: "", caloriesPerDay: "" });
+  const [d, setD] = useState(emptyDiet);
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const updateEx = (i, field, value) => {
     const copy = [...exercises];
@@ -20,7 +24,8 @@ export default function Trainer() {
   };
 
   const saveWorkout = async () => {
-    setError(""); setMsg("");
+    if (saving) return;
+    setSaving(true); setError(""); setMsg("");
     try {
       await api.post("/workouts/plans", {
         ...w,
@@ -29,15 +34,21 @@ export default function Trainer() {
           .map((x) => ({ name: x.name, sets: Number(x.sets), reps: Number(x.reps) })),
       });
       setMsg("Workout plan created");
+      setW(emptyWorkout);
+      setExercises([{ name: "", sets: "", reps: "" }]);
     } catch (e) { show(e); }
+    finally { setSaving(false); }
   };
 
   const saveDiet = async () => {
-    setError(""); setMsg("");
+    if (saving) return;
+    setSaving(true); setError(""); setMsg("");
     try {
       await api.post("/workouts/diets", { ...d, caloriesPerDay: Number(d.caloriesPerDay) });
       setMsg("Diet plan created");
+      setD(emptyDiet);
     } catch (e) { show(e); }
+    finally { setSaving(false); }
   };
 
   return (
@@ -58,7 +69,7 @@ export default function Trainer() {
           </div>
         ))}
         <button onClick={() => setExercises([...exercises, { name: "", sets: "", reps: "" }])}>+ Add exercise</button>{" "}
-        <button onClick={saveWorkout}>Save workout</button>
+        <button onClick={saveWorkout} disabled={saving}>{saving ? "Saving..." : "Save workout"}</button>
       </div>
 
       <div className="card">
@@ -67,7 +78,7 @@ export default function Trainer() {
         <input placeholder="Title" value={d.title} onChange={(e) => setD({ ...d, title: e.target.value })} />
         <input placeholder="Meals" value={d.meals} onChange={(e) => setD({ ...d, meals: e.target.value })} />
         <input placeholder="Calories per day" type="number" value={d.caloriesPerDay} onChange={(e) => setD({ ...d, caloriesPerDay: e.target.value })} />
-        <button onClick={saveDiet}>Save diet</button>
+        <button onClick={saveDiet} disabled={saving}>{saving ? "Saving..." : "Save diet"}</button>
       </div>
     </>
   );

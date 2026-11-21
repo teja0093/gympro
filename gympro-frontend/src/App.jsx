@@ -8,21 +8,29 @@ import Workouts from "./pages/Workouts.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import ManagePlans from "./pages/ManagePlans.jsx";
 import Trainer from "./pages/Trainer.jsx";
+import TrainerPlans from "./pages/TrainerPlans.jsx";
 
 function Protected({ children, roles }) {
-  if (!localStorage.getItem("token")) return <Navigate to="/login" />;
-  const role = localStorage.getItem("role");
-  if (roles && !roles.includes(role)) return <Navigate to="/plans" />;
+  if (!sessionStorage.getItem("token")) return <Navigate to="/login" />;
+  const role = sessionStorage.getItem("role");
+  if (roles && !roles.includes(role)) return <Navigate to="/" />;
   return children;
+}
+
+// "/" sends you to the right page for your role, or to login
+function Home() {
+  if (!sessionStorage.getItem("token")) return <Navigate to="/login" />;
+  const role = sessionStorage.getItem("role");
+  return <Navigate to={role === "ADMIN" ? "/dashboard" : role === "TRAINER" ? "/trainer" : "/plans"} />;
 }
 
 export default function App() {
   const navigate = useNavigate();
-  const email = localStorage.getItem("email");
-  const role = localStorage.getItem("role");
+  const email = sessionStorage.getItem("email");
+  const role = sessionStorage.getItem("role");
 
   const logout = () => {
-    localStorage.clear();
+    sessionStorage.clear();
     navigate("/login");
   };
 
@@ -39,19 +47,26 @@ export default function App() {
             <Link to="/workouts">Workouts</Link>
           </>
         )}
-        {email && role === "TRAINER" && <Link to="/trainer">Trainer</Link>}
+        {email && role === "TRAINER" && (
+          <>
+            <Link to="/trainer">Create Plans</Link>
+            <Link to="/trainer-plans">Edit Plans</Link>
+          </>
+        )}
         {email && role === "ADMIN" && (
           <>
             <Link to="/dashboard">Dashboard</Link>
             <Link to="/manage-plans">Manage Plans</Link>
-            <Link to="/trainer">Trainer</Link>
+            <Link to="/trainer">Create Plans</Link>
+            <Link to="/trainer-plans">Edit Plans</Link>
           </>
         )}
-        <span style={{ marginLeft: "auto" }}>{email} ({role})</span>
+        <span style={{ marginLeft: "auto" }}>{email && `${email} (${role})`}</span>
         {email && <button onClick={logout}>Logout</button>}
       </div>
       <div className="container">
         <Routes>
+          <Route path="/workouts" element={<Protected roles={["MEMBER"]}><Workouts /></Protected>} />
           <Route path="/login" element={<Login />} />
           <Route path="/profile" element={<Protected roles={["MEMBER"]}><Profile /></Protected>} />
           <Route path="/plans" element={<Protected><Plans /></Protected>} />
@@ -61,7 +76,8 @@ export default function App() {
           <Route path="/dashboard" element={<Protected roles={["ADMIN"]}><Dashboard /></Protected>} />
           <Route path="/manage-plans" element={<Protected roles={["ADMIN"]}><ManagePlans /></Protected>} />
           <Route path="/trainer" element={<Protected roles={["TRAINER", "ADMIN"]}><Trainer /></Protected>} />
-          <Route path="*" element={<Navigate to="/plans" />} />
+          <Route path="/trainer-plans" element={<Protected roles={["TRAINER", "ADMIN"]}><TrainerPlans /></Protected>} />
+          <Route path="*" element={<Home />} />
         </Routes>
       </div>
     </>

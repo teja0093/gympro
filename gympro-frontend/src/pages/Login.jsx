@@ -20,10 +20,9 @@ export default function Login() {
         setIsRegister(false);
       } else {
         const res = await api.post("/auth/login", { email: form.email, password: form.password });
-        localStorage.setItem("token", res.data.token);
-        localStorage.setItem("email", res.data.email);
-        localStorage.setItem("role", res.data.role);
-
+        sessionStorage.setItem("token", res.data.token);
+        sessionStorage.setItem("email", res.data.email);
+        sessionStorage.setItem("role", res.data.role);
         // Send each role to its own home page
         const role = res.data.role;
         if (role === "ADMIN") navigate("/admin");
