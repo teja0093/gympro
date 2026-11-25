@@ -1,5 +1,7 @@
 # GymPro
 
+**Demo video:** https://youtu.be/ArG_TlHiYjk
+
 Gym management system built with **Spring Boot microservices** and a **React** frontend. The whole application (backend and website) runs with one Docker command.
 
 ## Architecture
@@ -11,15 +13,17 @@ Client → API Gateway (JWT check) → Services (each with its own MySQL databas
                                   |
                        API Gateway (8080)  validates JWT, CORS
                                   |
-   ---------------------------------------------------------------------
-   |            |               |               |              |
-auth-service  member-service  attendance-    workout-      payment-
-(8081)        (8082)          service (8083) service (8085) service (8084)
+   ---------------------------------------------------------------------------
+   |            |               |               |              |             |
+auth-service  member-service  attendance-    workout-      payment-     notification-
+(8081)        (8082)          service (8083) service (8085) service (8084) service (8086)
    |            |               |               |              |
 auth_db       member_db      attendance_db   workout_db     payment_db
 
         Discovery Server (Eureka, 8761): all services register here
 ```
+
+8 Spring Boot applications: 7 microservices registered in Eureka, plus the Eureka server itself.
 
 The gateway validates the JWT and forwards the user's email and role to each service as the headers `X-User-Email` and `X-User-Role`. The services never handle tokens themselves.
 
@@ -32,15 +36,16 @@ The gateway validates the JWT and forwards the user's email and role to each ser
 | auth-service | 8081 | Register, login, JWT token, roles (ADMIN, TRAINER, MEMBER) |
 | member-service | 8082 | Membership plans, member profiles, subscriptions, daily expiry job, admin dashboard |
 | attendance-service | 8083 | Check-in / check-out, uses OpenFeign to verify an active membership |
-| payment-service | 8084 | Creates payment orders, verifies payments (Razorpay or mock mode), activates the subscription |
+| payment-service | 8084 | Creates payment orders, verifies payments (Razorpay or mock mode), activates the subscription, triggers a notification |
 | workout-service | 8085 | Trainers create, edit and delete workout and diet plans; members view their own |
+| notification-service | 8086 | Receives requests from payment-service and sends emails (mock mode: written to the log) |
 | gympro-frontend | 5173 | React web app (served by nginx in Docker) with member, trainer and admin pages |
 
 ## Tech Stack
 
 **Backend:** Java 21, Spring Boot 4, Spring Cloud (Gateway, Eureka, OpenFeign), Spring Security, JWT, Spring Data JPA, MySQL, Razorpay, Swagger (springdoc OpenAPI), Maven
 
-**Frontend:** React, Vite, React Router, Axios
+**Frontend:** React, Vite, React Router, Axios, custom CSS gym theme
 
 **Testing:** JUnit 5, Mockito
 
@@ -58,6 +63,7 @@ A parent `pom.xml` groups all backend services so they open together as one proj
 - Trainers and admins create, edit and delete workout and diet plans; duplicate plans for the same member and title are rejected
 - Members see only their own workout and diet plans
 - Payment flow: create order, verify payment, then the subscription is activated automatically
+- Confirmation notification after a successful payment; a notification failure never fails the payment
 - Razorpay integration with a **mock mode** for local development (no real keys needed)
 - A member cannot subscribe without paying: the subscribe endpoint accepts only internal calls from payment-service (shared internal key)
 - Global exception handling: every error returns the same clean JSON format
@@ -108,8 +114,10 @@ AttendanceServiceTest:
 - **Gateway handles security:** the JWT is checked once at the gateway, and the services trust the `X-User-*` headers.
 - **Sync calls with OpenFeign:** attendance-service asks member-service whether a membership is active before allowing check-in. If member-service is down, the user gets a clear 503 message.
 - **Pay before subscribe:** the subscribe endpoint is locked with an internal key, so only payment-service can activate a subscription after a verified payment.
-- **Pluggable payments:** Razorpay or mock mode is chosen with one setting (`RAZORPAY_MOCK`).
+- **Pluggable payments and email:** Razorpay or mock mode is chosen with one setting (`RAZORPAY_MOCK`); the notification service logs emails in mock mode and can be switched to real email later.
+- **Failure isolation:** if notification-service is down, payments still succeed and only a warning is logged.
 - **Configuration through environment variables:** database host, password and Eureka URL come from the environment, so the same code runs locally and in Docker. Secrets stay in a git-ignored `.env` file.
+- **Roles are assigned in the database:** the public register form always creates a MEMBER, so nobody can make themselves an admin from the website.
 
 ## Frontend Pages
 
@@ -125,6 +133,7 @@ AttendanceServiceTest:
 2. Member pays (the Razorpay checkout page in the real app).
 3. Member calls `POST /payments/verify` with the order id, payment id and signature.
 4. If the signature is valid, the payment is marked `SUCCESS` and payment-service tells member-service to activate the subscription.
+5. payment-service asks notification-service to send a confirmation email.
 
 **Mock mode** (default, `RAZORPAY_MOCK=true`): no Razorpay account is needed, and the signature `mock_success` counts as a valid payment. For real Razorpay test mode, set `RAZORPAY_MOCK=false`, `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET`.
 
@@ -148,7 +157,7 @@ docker compose up --build
 
 1. Create the MySQL databases: `auth_db`, `member_db`, `attendance_db`, `workout_db`, `payment_db`
 2. Set the environment variable `DB_PASSWORD` to your MySQL password (for auth, member, attendance, workout and payment services)
-3. Start the services in this order: discovery-server, auth-service, member-service, attendance-service, workout-service, payment-service, api-gateway
+3. Start the services in this order: discovery-server, auth-service, member-service, attendance-service, workout-service, notification-service, payment-service, api-gateway
 4. Open http://localhost:8761 to see the registered services
 5. Run the frontend:
 
@@ -162,16 +171,16 @@ Open http://localhost:5173.
 
 ### First-time setup
 
-The database starts empty, so create the first users with `POST http://localhost:8080/auth/register`:
+The database starts empty and every new account is a MEMBER. To create an admin and a trainer:
 
-```json
-{ "name": "Admin", "email": "admin@gmail.com", "password": "123456", "role": "ADMIN" }
+1. Register `admin@gmail.com` and `trainer@gmail.com` on the website.
+2. Promote them in MySQL (Docker):
+
 ```
-```json
-{ "name": "Coach", "email": "trainer@gmail.com", "password": "123456", "role": "TRAINER" }
+docker compose exec mysql sh -c "mysql -uroot -p\"$MYSQL_ROOT_PASSWORD\" -e \"UPDATE auth_db.users SET role='ADMIN' WHERE email='admin@gmail.com'; UPDATE auth_db.users SET role='TRAINER' WHERE email='trainer@gmail.com';\""
 ```
 
-Then log in as the admin and create a plan in **Manage Plans**. Register a member on the website, create a profile, and buy the plan.
+3. Log in again (the role is stored in the token), create a plan in **Manage Plans**, then register a member, create a profile and buy the plan.
 
 ### Useful Docker commands
 
@@ -181,6 +190,7 @@ Then log in as the admin and create a plan in **Manage Plans**. Register a membe
 | `docker compose up -d --build <service>` | Rebuild and restart one service after changing its code |
 | `docker compose ps` | Show running containers |
 | `docker compose logs <service> --tail 30` | Show the latest logs of a service |
+| `docker compose logs -f notification-service` | Watch the "emails" being sent |
 | `docker compose down` | Stop everything (data is kept) |
 | `docker compose down -v` | Stop everything and delete the database data |
 
@@ -225,7 +235,7 @@ Services behind the gateway read the headers `X-User-Email` and `X-User-Role`. I
 
 | Method | Endpoint | Who can use it |
 |---|---|---|
-| POST | /auth/register | Everyone |
+| POST | /auth/register | Everyone (always creates a MEMBER) |
 | POST | /auth/login | Everyone |
 | POST | /plans | ADMIN |
 | GET | /plans | Any logged-in user |
@@ -256,19 +266,20 @@ Services behind the gateway read the headers `X-User-Email` and `X-User-Role`. I
 | GET | /workouts/diets/member?email= | TRAINER, ADMIN |
 | GET | /workouts/my-plans | MEMBER |
 | GET | /workouts/my-diets | MEMBER |
+| POST | /notifications/send | Internal only (called by payment-service, not exposed by the gateway) |
 
 ## Known Limitations
 
 - If activation fails after a successful payment, the payment stays `SUCCESS` and needs manual follow-up. A retry or refund step is planned.
+- Emails are written to the log (mock mode); real email sending is planned.
 - Unit tests cover auth, attendance, member and payment services; workout-service is planned.
 - Services run locally with Docker; cloud deployment is planned.
 
 ## Roadmap
 
+- Real email sending (Spring Mail) and membership expiry reminders
 - Unit tests for workout-service
-- Notification service (email on signup and expiring memberships)
 - Cloud deployment with a live link
-- Demo video
 
 ## Author
 

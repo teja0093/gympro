@@ -23,11 +23,11 @@ export default function Login() {
         sessionStorage.setItem("token", res.data.token);
         sessionStorage.setItem("email", res.data.email);
         sessionStorage.setItem("role", res.data.role);
-        // Send each role to its own home page
         const role = res.data.role;
-        if (role === "ADMIN") navigate("/admin");
+        if (role === "ADMIN") navigate("/dashboard");
         else if (role === "TRAINER") navigate("/trainer");
         else navigate("/profile");
+        window.location.reload(); // refresh the top menu for the new role
       }
     } catch (e) {
       const data = e.response?.data;
@@ -36,8 +36,9 @@ export default function Login() {
   };
 
   return (
-    <div className="card">
+    <div className="card login-card">
       <h2>{isRegister ? "Register" : "Login"}</h2>
+      <p className="tagline">Train hard. Track everything.</p>
       {isRegister && <input name="name" placeholder="Name" value={form.name} onChange={change} />}
       <input name="email" placeholder="Email" value={form.email} onChange={change} />
       <input name="password" type="password" placeholder="Password (min 6)" value={form.password} onChange={change} />

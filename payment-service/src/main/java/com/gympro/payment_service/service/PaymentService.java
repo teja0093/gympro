@@ -1,6 +1,7 @@
 package com.gympro.payment_service.service;
 
 import com.gympro.payment_service.client.MemberClient;
+import com.gympro.payment_service.client.NotificationClient;   // NEW
 import com.gympro.payment_service.dto.*;
 import com.gympro.payment_service.entity.Payment;
 import com.gympro.payment_service.entity.PaymentStatus;
@@ -21,6 +22,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;                                           // NEW
 import java.util.UUID;
 
 @Slf4j
@@ -30,6 +32,7 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final MemberClient memberClient;
+    private final NotificationClient notificationClient;        // NEW
 
     @Value("${razorpay.mock:false}")
     private boolean mock;
@@ -139,6 +142,18 @@ public class PaymentService {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
                     "Payment received but the subscription could not be activated. Contact support.");
         }
+
+        // NEW: a notification problem must never fail the payment
+        try {
+            notificationClient.send(Map.of(
+                    "to", email,
+                    "subject", "GymPro: payment received",
+                    "message", "Your payment of Rs " + payment.getAmount()
+                            + " was successful and your membership is now active."));
+        } catch (Exception e) {
+            log.warn("Could not send notification: {}", e.getMessage());
+        }
+
         return payment;
     }
 

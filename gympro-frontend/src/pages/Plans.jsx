@@ -5,6 +5,9 @@ export default function Plans() {
   const [plans, setPlans] = useState([]);
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
+  const [toast, setToast] = useState("");
+  const [buying, setBuying] = useState(false);
+  const email = sessionStorage.getItem("email");
 
   useEffect(() => {
     api.get("/plans")
@@ -12,8 +15,16 @@ export default function Plans() {
       .catch(() => setError("Could not load plans"));
   }, []);
 
-  // Mock payment flow: create order, then verify with the mock signature
+  // hide the popup after 6 seconds
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(""), 6000);
+    return () => clearTimeout(t);
+  }, [toast]);
+
   const buy = async (planId) => {
+    if (buying) return;
+    setBuying(true);
     setError("");
     setMsg("");
     try {
@@ -24,17 +35,22 @@ export default function Plans() {
         signature: "mock_success",
       });
       setMsg("Payment successful! Your membership is active.");
+      setToast(`Confirmation email sent to ${email}`);
     } catch (e) {
       const status = e.response?.status;
       setError(
         e.response?.data?.message ||
           `Payment failed (status: ${status ?? "no response / network or CORS"})`
       );
+    } finally {
+      setBuying(false);
     }
   };
 
   return (
     <>
+      {toast && <div className="toast">✉ {toast}</div>}
+
       <h2>Membership Plans</h2>
       <p className="success">{msg}</p>
       <p className="error">{error}</p>
@@ -42,7 +58,9 @@ export default function Plans() {
         <div className="card" key={p.id}>
           <h3>{p.name} - ₹{p.price}</h3>
           <p>{p.description} ({p.durationDays} days)</p>
-          <button onClick={() => buy(p.id)}>Buy</button>
+          <button onClick={() => buy(p.id)} disabled={buying}>
+            {buying ? "Processing..." : "Buy"}
+          </button>
         </div>
       ))}
     </>

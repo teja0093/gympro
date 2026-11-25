@@ -1,6 +1,7 @@
 package com.gympro.payment_service.service;
 
 import com.gympro.payment_service.client.MemberClient;
+import com.gympro.payment_service.client.NotificationClient;
 import com.gympro.payment_service.dto.OrderResponse;
 import com.gympro.payment_service.dto.PlanDto;
 import com.gympro.payment_service.dto.VerifyRequest;
@@ -34,6 +35,7 @@ class PaymentServiceTest {
 
     @Mock private PaymentRepository paymentRepository;
     @Mock private MemberClient memberClient;
+    @Mock private NotificationClient notificationClient;
 
     @InjectMocks private PaymentService paymentService;
 

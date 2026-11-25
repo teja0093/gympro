@@ -68,6 +68,13 @@ services:
       mysql: { condition: service_healthy }
       discovery-server: { condition: service_started }
 
+  notification-service:
+    build: { context: ., args: { SERVICE: notification-service } }
+    environment:
+      EUREKA_URL: http://discovery-server:8761/eureka
+    depends_on:
+      - discovery-server
+
   api-gateway:
     build: { context: ., args: { SERVICE: api-gateway } }
     ports: ["8080:8080"]
