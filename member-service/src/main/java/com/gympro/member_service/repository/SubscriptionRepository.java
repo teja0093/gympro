@@ -20,9 +20,12 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
 
     List<Subscription> findByStatusAndEndDateBetween(SubscriptionStatus status, LocalDate from, LocalDate to);
 
+    List<Subscription> findByStatusAndEndDateAndReminderSentFalse(SubscriptionStatus status, LocalDate endDate);
+    
     @Query("SELECT COALESCE(SUM(s.plan.price), 0) FROM Subscription s")
     BigDecimal totalRevenue();
 
     @Query("SELECT COALESCE(SUM(s.plan.price), 0) FROM Subscription s WHERE s.startDate >= :from")
     BigDecimal revenueSince(LocalDate from);
+    
 }

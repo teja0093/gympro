@@ -1,5 +1,6 @@
 package com.gympro.member_service.service;
 
+import com.gympro.member_service.client.NotificationClient;
 import com.gympro.member_service.entity.Member;
 import com.gympro.member_service.entity.MembershipPlan;
 import com.gympro.member_service.entity.Subscription;
@@ -30,6 +31,7 @@ class MemberServiceTest {
     @Mock private MemberRepository memberRepository;
     @Mock private MembershipPlanRepository planRepository;
     @Mock private SubscriptionRepository subscriptionRepository;
+    @Mock private NotificationClient notificationClient;
 
     @InjectMocks private MemberService memberService;
 

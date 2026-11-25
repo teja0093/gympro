@@ -9,6 +9,8 @@ import java.time.LocalDate;
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Subscription {
 
+	@Builder.Default
+	private boolean reminderSent = false;
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

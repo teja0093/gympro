@@ -1,5 +1,7 @@
 package com.gympro.member_service.service;
 
+import com.gympro.member_service.client.NotificationClient;
+
 import com.gympro.member_service.dto.DashboardResponse;
 import java.math.BigDecimal;
 import com.gympro.member_service.entity.*;
@@ -12,14 +14,18 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MemberService {
 
     private final MemberRepository memberRepository;
     private final MembershipPlanRepository planRepository;
     private final SubscriptionRepository subscriptionRepository;
+    private final NotificationClient notificationClient;
     
     public Subscription getMyActiveSubscription(String email) {
         Member member = getByEmail(email);
@@ -104,5 +110,30 @@ public class MemberService {
                 subscriptionRepository.totalRevenue(),
                 monthRevenue,
                 expiring);
+    }
+    
+ // Runs every day at 9 AM
+    @Scheduled(cron = "0 0 9 * * *")
+    public void sendExpiryReminders() {
+        LocalDate target = LocalDate.now().plusDays(2);
+        List<Subscription> due = subscriptionRepository
+                .findByStatusAndEndDateAndReminderSentFalse(SubscriptionStatus.ACTIVE, target);
+
+        for (Subscription s : due) {
+            memberRepository.findById(s.getMemberId()).ifPresent(member -> {
+                try {
+                    notificationClient.send(Map.of(
+                            "to", member.getUserEmail(),
+                            "subject", "GymPro: your membership ends soon",
+                            "message", "Hi " + member.getName() + ", your " + s.getPlan().getName()
+                                    + " membership ends on " + s.getEndDate()
+                                    + ". Renew soon to keep your access."));
+                    s.setReminderSent(true);
+                    subscriptionRepository.save(s);
+                } catch (Exception e) {
+                    log.warn("Reminder failed for {}: {}", member.getUserEmail(), e.getMessage());
+                }
+            });
+        }
     }
 }

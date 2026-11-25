@@ -65,4 +65,11 @@ public class MemberController {
         RoleGuard.requireRole(role, "ADMIN");
         return memberService.dashboard();
     }
+    
+    @PostMapping("/send-reminders")
+    public String sendReminders(@RequestHeader("X-User-Role") String role) {
+        RoleGuard.requireRole(role, "ADMIN");
+        memberService.sendExpiryReminders();
+        return "Reminder check done";
+    }
 }
