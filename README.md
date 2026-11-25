@@ -73,6 +73,7 @@ A parent `pom.xml` groups all backend services so they open together as one proj
 - Dockerized: backend and frontend run with one `docker compose` command
 - CORS configured in the gateway for the frontend
 - Login session lasts only for the browser tab (sessionStorage); expired tokens send the user back to the login page
+- Daily job sends a reminder 2 days before a membership expires
 
 ## Screenshots
 
@@ -267,6 +268,7 @@ Services behind the gateway read the headers `X-User-Email` and `X-User-Role`. I
 | GET | /workouts/my-plans | MEMBER |
 | GET | /workouts/my-diets | MEMBER |
 | POST | /notifications/send | Internal only (called by payment-service, not exposed by the gateway) |
+| POST | /members/send-reminders | ADMIN |
 
 ## Known Limitations
 
@@ -277,7 +279,7 @@ Services behind the gateway read the headers `X-User-Email` and `X-User-Role`. I
 
 ## Roadmap
 
-- Real email sending (Spring Mail) and membership expiry reminders
+- Real email sending (Spring Mail) 
 - Unit tests for workout-service
 - Cloud deployment with a live link
 
